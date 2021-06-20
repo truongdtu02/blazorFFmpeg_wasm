@@ -1,26 +1,42 @@
-﻿
-@page "/ffmpeg"
+# FFmpegBlazor
+
+ [![NuGet Package](https://img.shields.io/badge/nuget-v1.0.0.3%20Preview%204-orange.svg)](https://www.nuget.org/packages/FFmpegBlazor/)
+[![NuGet Badge](https://buildstats.info/nuget/FFmpegBlazor)](https://www.nuget.org/packages/FFmpegBlazor/)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+
+ 
+FFmpegBlazor provides ability to utilize ffmpeg.wasm from Blazor Wasm C#.\
+[ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) is a pure Webassembly / Javascript  port of FFmpeg. It enables video & audio record, convert and stream right inside browsers.\
+FFmpegBlazor integrates nicely with Blazor `InputFile` Component.
+
+
+### Installation
+
+Download package via  [Nuget](https://www.nuget.org/packages/FFmpegBlazor/)  or DotNet CLI and you are good to go , no extra configuration required.
+```cli
+dotnet add package FFmpegBlazor 
+```
+[API Documentation](https://github.com/sps014/FFmpegBlazor/wiki)
+
+
+### Sample 
+Here is a sample page to convert mp4 to mp3 and play it in browser.
+
+```razor
+
+@page "/"
 @using FFmpegBlazor
 @inject IJSRuntime Runtime
 @using Microsoft.AspNetCore.Components.Forms
 
-<InputFile OnChange="fileLoad" />
-<br />
-<br />
-<audio controls src="@url" />
-<br />
-<br />
-<button class="btn btn-primary" @onclick="Process">Convert Mp3</button>
-<br />
-<br />
+
+<InputFile OnChange="fileLoad" /><br /> <br />
+<video width="300" height="200" autoplay controls src="@url" /><br /><br />
+<button class="btn btn-primary" @onclick="Process">Convert Mp3</button><br /><br />
 <audio controls src="@url2" />
-<br />
-<br />
-<h3>Progress @progress %</h3>
 
 @code
 {
-    float progress;
     string url; string url2;
     FFMPEG ff;
     byte[] buffer;
@@ -31,7 +47,6 @@
         {
             FFmpegFactory.Logger += WriteLogs;
             FFmpegFactory.Progress += ProgressChange;
-            //FFmpegFactory.Progress += ProgressShow;
         }
 
         //initialize Library
@@ -51,7 +66,7 @@
         await stream.ReadAsync(buffer);
 
         //create a video link from buffer so that video can be played
-        url = FFmpegFactory.CreateURLFromBuffer(buffer, "myFile.mp3", file.ContentType);
+        url = FFmpegFactory.CreateURLFromBuffer(buffer, "myFile.mp4", file.ContentType);
 
         //reRender DOM
         StateHasChanged();
@@ -63,18 +78,15 @@
         ff = FFmpegFactory.CreateFFmpeg(new FFmpegConfig() { Log = true });
 
         //download all dependencies from cdn
-        await ff.Load();
+        await ff.Load(); 
 
         if (!ff.IsLoaded) return;
 
         //write buffer to in-memory files (special emscripten files, Ffmpeg only interact with this file)
-        //ff.WriteFile("myFile.mp4", buffer);
-        ff.WriteFile("myFile.mp3", buffer);
+        ff.WriteFile("myFile.mp4", buffer);
 
         //Pass CLI argument here equivalent to ffmpeg -i myFile.mp4 output.mp3
-        //await ff.Run("-i", "myFile.mp4", "output.mp3");
-        //-codec:a libmp3lame -b:a 48k –ac 1 -ar  24000
-        await ff.Run("-i", "myFile.mp3", "-b:a", "48k", "-ac", "1", "-ar", "24000", "output.mp3");
+        await ff.Run("-i", "myFile.mp4", "output.mp3");
 
         //delete in-memory file
         //ff.UnlinkFile("myFile.mp4");
@@ -82,9 +94,10 @@
 
     async void ProgressChange(Progress m)
     {
-        // display progress % (0-1)
+         // display progress % (0-1)
         Console.WriteLine($"Progress {m.Ratio}");
 
+        //if ffmpeg processing is complete (generate a media URL so that it can be played or alternatively download that file)
         if (m.Ratio == 1)
         {
             //get bytepointer from c wasm to c#
@@ -98,12 +111,13 @@
 
             //FFmpegFactory.DownloadBufferAsFile(res, "output.mp3", "audio/mp3");
 
+            StateHasChanged();
         }
-        progress = (float)m.Ratio * 100;
-        StateHasChanged();
     }
+
     void WriteLogs(Logs m)
     {
         Console.WriteLine(m.Type + " " + m.Message);
     }
 }
+```
