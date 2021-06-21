@@ -25,6 +25,8 @@
     FFMPEG ff;
     byte[] buffer;
 
+    byte[] buf = new byte[100];
+
     protected override async Task OnInitializedAsync()
     {
         if (FFmpegFactory.Runtime == null)
@@ -33,7 +35,7 @@
             FFmpegFactory.Progress += ProgressChange;
             //FFmpegFactory.Progress += ProgressShow;
         }
-
+        
         //initialize Library
         await FFmpegFactory.Init(Runtime);
     }
