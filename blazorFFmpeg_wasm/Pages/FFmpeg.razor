@@ -24,8 +24,8 @@
     string url; string url2;
     FFMPEG ff;
     byte[] buffer;
-
-    byte[] buf = new byte[100];
+    const double maxLeng = 1E8;
+    byte[] buf = new byte[(int)maxLeng];
 
     protected override async Task OnInitializedAsync()
     {
